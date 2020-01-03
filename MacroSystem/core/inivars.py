@@ -1,5 +1,5 @@
 # -*- coding: latin-1 -*-
-from __future__ import unicode_literals
+
 """contains class IniVars, that does inifiles
 
 """
@@ -11,7 +11,6 @@ from utilsqh import path, peek_ahead
 import locale
 locale.setlocale(locale.LC_ALL, '')
 import readwritefile  # reading with encoding BOM mark
-from UserDict import UserDict
 lineNum = 0
 fileName = ''
 class IniError(Exception):
@@ -20,7 +19,7 @@ class IniError(Exception):
         self.value = value
         self.lineNum = lineNum
         self.fileName = fileName
-        
+
     def __str__(self):
         s = ['Inivars error ']
         if fileName:
@@ -29,30 +28,30 @@ class IniError(Exception):
             s.append('on line %s'%lineNum)
         s.append(': ')
         s.append(self.value)
-        return u''.join(s)
+        return ''.join(s)
 
 
 DEBUG = 0
 # doctest at the bottom
 #reAllSections = re.compile(r'^\s*[([^]]+)\]\s*$', re.M)
 #reAllKeys = re.compile(r'(^[^=\n]+)[=]', re.M)
-reValidSection = re.compile(ur'\[\b([- \.\w]+)]\s*$', re.L)
-reFindKeyValue = re.compile(ur'\b([- \.\w]+)\s*=(.*)$', re.L)
-reValidKey = re.compile(ur'(\w[\w \.\-]*)$', re.L)
-reQuotes = re.compile(ur'[\'"]')
+reValidSection = re.compile(r'\[\b([- \.\w]+)]\s*$')
+reFindKeyValue = re.compile(r'\b([- \.\w]+)\s*=(.*)$')
+reValidKey = re.compile(r'(\w[\w \.\-]*)$')
+reQuotes = re.compile(r'[\'"]')
 
-reListValueSplit = re.compile(ur'[\n;]', re.M)
-reWhiteSpace = re.compile(ur'\s+')
+reListValueSplit = re.compile(r'[\n;]')
+reWhiteSpace = re.compile(r'\s+')
 
-reDoubleQuotes = re.compile(ur'^"([^"]*)"$', re.M)
-reSingleQuotes = re.compile(ur"^'([^']*)'$", re.M)
+reDoubleQuotes = re.compile(r'^"([^"]*)"$')
+reSingleQuotes = re.compile(r"^'([^']*)'$")
 
 def quoteSpecial(t, extraProtect = None):
     """add quotes to string, to protect starting quotes, spaces
 
     extraProtect is possibly a string/list/tuple of characters that
     also need to be protected with quotes
-    
+
 >>> quoteSpecial("abc")
 u'abc'
 >>> quoteSpecial(" abc  ")
@@ -68,24 +67,24 @@ u'\\' "ab"\\''
 
 but singular quotes inside a string are kept as they were:
 
->>> quoteSpecial('a" b "c')    
+>>> quoteSpecial('a" b "c')
 u'a" b "c'
 
 with both quotes:
->>> quoteSpecial('a" \\'b "c')    
+>>> quoteSpecial('a" \\'b "c')
 u'a" \\'b "c'
 
->>> quoteSpecial("'a\\" 'b \\"c'")    
+>>> quoteSpecial("'a\\" 'b \\"c'")
 u'"\\'a&quot; \\'b &quot;c\\'"'
 
->>> quoteSpecial('" \\'b "c\\' xyz')    
+>>> quoteSpecial('" \\'b "c\\' xyz')
 u'"&quot; \\'b &quot;c\\' xyz"'
 
 >>> quoteSpecial('ab"')
 u'ab"'
 >>> quoteSpecial("ab' '")
 u"ab' '"
->>> quoteSpecial("a' b 'c")    
+>>> quoteSpecial("a' b 'c")
 u"a' b 'c"
 
 now for the list possibility:
@@ -103,10 +102,10 @@ u'"abc,"'
 u'"a,bc"'
 >>> quoteSpecial("a,bc", "'|;")
 u'a,bc'
-    
+
     """
     if t is None:
-        return u''
+        return ''
     if t.strip() != t:
         # leading or trailing spaces:
         if t.find('"') >= 0:
@@ -154,7 +153,7 @@ def quoteSpecialList(t):
 def stripSpecial(t):
     """strips text string, BUT if quotes or single quotes leaves rest
 
-    new lines are preserved, BUT all lines are stripped    
+    new lines are preserved, BUT all lines are stripped
 
 >>> stripSpecial('""')
 u''
@@ -168,33 +167,33 @@ u' a\\xe9 '
 u' a\\xe9  '
 
     """
-    
+
     #if t.find('\n') >= 0:
     #    return '\n'.join(map(stripSpecial, t.split('\n')))
     #
     t = t.strip()
     if not t:
-        return u''
+        return ''
     elif reDoubleQuotes.match(t):
         r = reDoubleQuotes.match(t)
         inside = r.group(1)
         if inside.find('"') == -1:
             return inside
         else:
-            raise IniError, 'invalid double quotes in string: |%s|'% t
+            raise IniError('invalid double quotes in string: |%s|'% t)
     elif reSingleQuotes.match(t):
         r = reSingleQuotes.match(t)
         inside = r.group(1)
         if inside.find("'") == -1:
             return inside
         else:
-            raise IniError, 'invalid single quotes in string: |%s|'% t
+            raise IniError('invalid single quotes in string: |%s|'% t)
     elif t.find("'") == 0 or t.find('"') == 0:
-        raise IniError, 'starting quote without matching end quote in string: |%s|'% t
+        raise IniError('starting quote without matching end quote in string: |%s|'% t)
     else:
         return t
 
-def getIniList(t, sep=(u";", u"\n")):
+def getIniList(t, sep=(";", "\n")):
     """gets a list from inifile with quotes entries
 
     inside this function a state is maintained, for keeping track
@@ -257,7 +256,7 @@ def getIniList(t, sep=(u";", u"\n")):
         elif c in sep:
             if state == 0:
                 # yielding empty string
-                yield u''
+                yield ''
             elif state == 1:
                 # end of normal string
                 yield t[i:j].strip()
@@ -282,7 +281,7 @@ def getIniList(t, sep=(u";", u"\n")):
 
     if state == 0:
         # empty string at end
-        yield u''
+        yield ''
     elif state == 1:
 ##        print 'yielding normal last part: |%s|, i: %s,length: %s'% (t[i:],i,l)
         yield t[i:].strip()
@@ -298,7 +297,7 @@ def getIniDict(t):
     with value being a string or a list of strings, is separated by comma's
 
     If more keys are provided (separated by comma's),  these result
-    in different yield statements    
+    in different yield statements
 
     >>> list(getIniDict("a"))
     [(u'a', None)]
@@ -324,24 +323,24 @@ def getIniDict(t):
     if t.find('\n') >= 0:
         raise IniError('getIniDict must be called through getIniList, so newline chars are not possible: |%s|'%
                        t)
-    if t.find(u':') >= 0:
+    if t.find(':') >= 0:
         Keys, Values = [item.strip() for item in t.split(':', 1)]
     else:
         Keys = t.strip()
-        Values = u''
+        Values = ''
 
     if not Values:
         Values = None
     else:
-        Values = list(getIniList(Values, u","))
+        Values = list(getIniList(Values, ","))
         if len(Values) == 1:
             Values = Values[0]
 
     if not Keys:
         return
 
-    if Keys.find(u',') > 0:
-        Keys = [k.strip() for k in Keys.split(u',')]
+    if Keys.find(',') > 0:
+        Keys = [k.strip() for k in Keys.split(',')]
         for k in Keys:
             if not reValidKey.match(k):
                 raise IniError('invalid character in key |%s| of dictionary entry: |%s|'%
@@ -352,9 +351,9 @@ def getIniDict(t):
             raise IniError('invalid character in key |%s| of dictionary entry: |%s|'%
                            (Keys, t))
         yield Keys, Values
-        
-            
-        
+
+
+
 def lensort(a, b):
     """sorts two strings, longest first, if length is equal, normal sort
 
@@ -365,7 +364,7 @@ def lensort(a, b):
     >>> lensort('zzz', 'zzzzz')
     1
 
-    """    
+    """
     la = len(a)
     lb = len(b)
     if la == lb:
@@ -373,7 +372,7 @@ def lensort(a, b):
     else:
         return -cmp(la, lb)
 
-class IniSection(UserDict):
+class IniSection(dict):
     """represents a section of an inivars instance"""
 
     def __init__(self, parent):
@@ -383,7 +382,7 @@ class IniSection(UserDict):
         self._parent = parent
         self._returnStrings = None
         self._SKIgnorecase = parent._SKIgnorecase
-        UserDict.__init__(self)
+        dict.__init__(self)
 
     def __getitem__(self, key):
         '''double underscore means internal value'''
@@ -397,17 +396,17 @@ class IniSection(UserDict):
         else:
             key = key.strip()
             if reWhiteSpace.search(key):
-                key = reWhiteSpace.sub(u' ', key)
+                key = reWhiteSpace.sub(' ', key)
             if self._SKIgnorecase:
                 key = key.lower()
             try:
-                value = UserDict.__getitem__(self, key)
+                value = dict.__getitem__(self, key)
                 if type(value) == six.binary_type:
-                    print('warning inivars, value binary_type: %s (key: %s)'% (value, key))
+                    print(('warning inivars, value binary_type: %s (key: %s)'% (value, key)))
                     value = utilsqh.convertToUnicode(value)
                 return value
             except KeyError:
-                return u"" 
+                return ""
 
 
     def __setitem__(self, key, value):
@@ -415,16 +414,16 @@ class IniSection(UserDict):
         if reWhiteSpace.search(key):
             key = reWhiteSpace.sub(' ', key)
         if not key:
-            raise IniError, '__setitem__, invalid key |%s|(false), with value |%s| in inifile: %s'% \
-                  (key, value, self._parent._file)
-        
+            raise IniError('__setitem__, invalid key |%s|(false), with value |%s| in inifile: %s'% \
+                  (key, value, self._parent._file))
+
         if type(key) in (six.text_type, six.binary_type):
             if key.startswith == '__':
                 self.__dict__[key] = value
             else:
                 if self._SKIgnorecase:
                     key = key.lower()
-                UserDict.__setitem__(self, key, value)
+                dict.__setitem__(self, key, value)
         else:
             raise TypeError('inivars, IniSection __setitem__ expects str for key "%s", not: %s'% (key, type(key)))
 
@@ -434,9 +433,9 @@ class IniSection(UserDict):
         if reWhiteSpace.search(key):
             key = reWhiteSpace.sub(' ', key)
         if not key:
-            raise IniError, '__delitem__, invalid key |%s|(false),  inifile: %s'% \
-                  (key, self._parent._file)
-        
+            raise IniError('__delitem__, invalid key |%s|(false),  inifile: %s'% \
+                  (key, self._parent._file))
+
         if type(key) in (six.text_type, six.binary_type):
             if key.startswith == '__':
                 del self.__dict__[key]
@@ -444,7 +443,7 @@ class IniSection(UserDict):
                 if self._SKIgnorecase:
                     key = key.lower()
                 try:
-                    UserDict.__delitem__(self, key)
+                    dict.__delitem__(self, key)
                 except KeyError:
                     pass
         else:
@@ -453,14 +452,14 @@ class IniSection(UserDict):
     def __iter__(self):
         return iter(self.data)
 
-            
-        
-class IniVars(UserDict):
+
+
+class IniVars(dict):
     """do inivars from an .ini file, or possibly (extending this class)
     with other file types.
 
     File doesn't have to exist before.
-    version 8:  all go to unicode, and subclass UserDict (november 2018)
+    version 8:  all go to unicode, and subclass dict (november 2018)
 
     version 7:  quoting is allowed when spaces or special characters
                 " or ' or ; in lists or  ; or , in dicts are found.
@@ -473,7 +472,7 @@ class IniVars(UserDict):
         options at start: sectionsLC = 1: convert all section names to lowercase (default 0)
                           keysLC = 0: convert all keys to lowercase (default 0)
         gettting of keys, with optional parameters
-        
+
 
     version 5:
     In this version also a getDict, getList (was already), getInt
@@ -481,7 +480,7 @@ class IniVars(UserDict):
     inside the instance this type is conserved, when writing back
     into the inifile the appropriate formatting is done.
 
-    version 4:    
+    version 4:
     In this version 4 empty sections and keys are accepted, and set as
     [empty section] or
 
@@ -528,9 +527,9 @@ class IniVars(UserDict):
 
     getMatchingSection gives from a section list the name of thefirst section
                     that contains the key. Returns "section not found" if not found.
-                    
-                
-                    
+
+
+
 
 >>> import os
 >>> try: os.remove('empty.ini')
@@ -564,12 +563,12 @@ u'v'
 [u'k2', u'k']
     """
     _SKIgnorecase = None
-    
+
     def __init__(self, File, **kw):
         """init from valid files, raise error if invalid file
 
         """
-        UserDict.__init__(self)
+        dict.__init__(self)
         # add str function in case file is a path instance:
         self._repairErrors = kw.get('repairErrors', None)
         file = utilsqh.convertToUnicode(File)
@@ -588,22 +587,22 @@ u'v'
             if value:
                 print("Warning inivars: returnStrings is Obsolete, inivars only returns Unicode")
         if not self._ext:
-            raise IniError, 'file has no extension: %s'% self._file
+            raise IniError('file has no extension: %s'% self._file)
 
         # start with new file:
         if not os.path.isfile(file):
             return
         else:
-            readFuncName = u'_read' + self._ext
+            readFuncName = '_read' + self._ext
             try:
                 readFunc = getattr(self, readFuncName)
             except AttributeError:
-                raise IniError, 'file has invalid extension: %s'% self._file
+                raise IniError('file has invalid extension: %s'% self._file)
             else:
                 readFunc(file)
-        if DEBUG: print 'read from INI:', self
+        if DEBUG: print('read from INI:', self)
 
-    def __nonzero__(self):
+    def __bool__(self):
         """always true!"""
         return True
 
@@ -620,7 +619,7 @@ u'v'
 
         if key.startswith == '__':
             return key in self.__dict__
-        return UserDict.__contains__(self, key)
+        return dict.__contains__(self, key)
 
 
 
@@ -639,30 +638,30 @@ u'v'
             if self._SKIgnorecase:
                 key = key.lower()
             try:
-                value = UserDict.__getitem__(self, key)
+                value = dict.__getitem__(self, key)
             except KeyError:
                 value = None
             return value
 
     def __setitem__(self, key, value):
-        
+
         # if type(key) == six.binary_type:
         #     key = unicode(key)
-        
+
         key = key.strip()
         if reWhiteSpace.search(key):
             key = reWhiteSpace.sub(' ', key)
         if not key:
-            raise IniError, '__setitem__, invalid key |%s|(false), with value |%s| in inifile: %s'% \
-                  (key, value, self._file)
-        
+            raise IniError('__setitem__, invalid key |%s|(false), with value |%s| in inifile: %s'% \
+                  (key, value, self._file))
+
         if type(key) in (six.text_type, six.binary_type):
             if key.startswith == '__':
                 self.__dict__[key] = value
             else:
                 if self._SKIgnorecase:
                     key = key.lower()
-                UserDict.__setitem__(self, key, value)
+                dict.__setitem__(self, key, value)
         else:
             raise TypeError('inivars, __setitem__ of IniVars expects str for key "%s", not: %s'% (key, type(key)))
 
@@ -671,9 +670,9 @@ u'v'
         if reWhiteSpace.search(key):
             key = reWhiteSpace.sub(' ', key)
         if not key:
-            raise IniError, '__delitem__, invalid key |%s|(false), with value |%s| in inifile: %s'% \
-                  (key, value, self._file)
-        
+            raise IniError('__delitem__, invalid key |%s|(false), with value |%s| in inifile: %s'% \
+                  (key, value, self._file))
+
         if type(key) in (six.text_type, six.binary_type):
             if key.startswith == '__':
                 del self.__dict__[key]
@@ -681,12 +680,12 @@ u'v'
                 if self._SKIgnorecase:
                     key = key.lower()
                 try:
-                    UserDict.__delitem__(self, key)
+                    dict.__delitem__(self, key)
                 except KeyError:
                     pass
         else:
             raise TypeError('inivars, __delitem__ of IniVars expects str for key "%s", not: %s'% (key, type(key)))
-            
+
     def __iter__(self):
         return iter(self.data)
 ##    def _readPy(self, file):
@@ -705,7 +704,7 @@ u'v'
 ##        return d
 #     def returnStringOrUnicode(self, returnValue):
 #         """if option returnStrings is set to True, only return strings
-#         
+#
 #         This function affects only Strings (binary or text)
 #         other types are passed unchanged.
 # >>> try: os.remove('returnunicode.ini')
@@ -725,8 +724,8 @@ u'v'
 # [u'none', u'string', u'number']
 # >>> ini.get()
 # [u'section']
-# 
-# 
+#
+#
 #  ## now returnString=True
 # >>> try: os.remove('returnbinary.ini')
 # ... except: pass
@@ -755,8 +754,8 @@ u'v'
 #                 return returnValue
 #         else:
 #             return returnValue
-                                          
-        
+
+
     def _readIni(self, file):
         global lineNum, fileName
         lineNum = 0
@@ -776,28 +775,28 @@ u'v'
             line = line.rstrip()
             if line.find('weer onl') >= 0:
                 pass
-            
+
             lineNum += 1
             m = reValidSection.match(line)
             if self._repairErrors and not m:
                 # with repairErrors option, characters in front of a valid section:
                 n = reValidSection.search(line)
                 if n and not m:
-                    print 'ignore data in front of section: "%s"\n\t(please correct later in file "%s", line %s)'% (line,
-                                                                fileName, lineNum)                                                 
+                    print('ignore data in front of section: "%s"\n\t(please correct later in file "%s", line %s)'% (line,
+                                                                fileName, lineNum))
                     m = n
                 elif not sectionName:
                     if not line:
                         continue
-                    print 'no valid section found yet, skip line: "%s"\n\t(please correct later in file "%s", line %s)'% (line,
-                                                                fileName, lineNum)                                                 
+                    print('no valid section found yet, skip line: "%s"\n\t(please correct later in file "%s", line %s)'% (line,
+                                                                fileName, lineNum))
                     continue
             if m:
                 sectionName = m.group(1).strip()
                 if sectionName in self:
                     if self._repairErrors:
-                        print 'Warning: duplicate section "%s" on line %s and on line %s, take latter one\n\t(please correct later in file "%s")'% (
-                            sectionName, sectionNameLines[sectionName], lineNum, fileName)
+                        print('Warning: duplicate section "%s" on line %s and on line %s, take latter one\n\t(please correct later in file "%s")'% (
+                            sectionName, sectionNameLines[sectionName], lineNum, fileName))
                         del self[sectionName]
                     else:
                         raise IniError('Duplicate section "%s" on line %s and on line %s\n\t(please correct in file "%s")'% (
@@ -814,17 +813,17 @@ u'v'
                     raise IniError('no section defined yet')
                 if keyName in section:
                     if self._repairErrors:
-                        print 'Warning: duplicate keyname "%s" in section %s on line %s, take latter one\n\t(please correct later in file "%s")'% (
-                             keyName, sectionName, lineNum, fileName)
+                        print('Warning: duplicate keyname "%s" in section %s on line %s, take latter one\n\t(please correct later in file "%s")'% (
+                             keyName, sectionName, lineNum, fileName))
                         del section[keyName]
                     else:
                         raise IniError('Duplicate keyname "%s" in section %s on line %s\n\t(please correct in file "%s")'% (
                             keyName, sectionName, lineNum, fileName))
-                    
-                section[keyName] = [m.group(2)] 
+
+                section[keyName] = [m.group(2)]
                 key = section[keyName]
                 continue
-            
+
             if key:
                 # append to list of lines of key: stripping spaces etc.
                 key.append(line.strip())
@@ -833,14 +832,14 @@ u'v'
                     raise IniError('no key or section found yet')
                 elif key is None:
                     if self._repairErrors:
-                        print 'Warning: no key found in section "%s" on line %s, ignore\n\t(please correct later in file "%s")'% (
-                             sectionName, lineNum, fileName)
+                        print('Warning: no key found in section "%s" on line %s, ignore\n\t(please correct later in file "%s")'% (
+                             sectionName, lineNum, fileName))
                         continue
                     else:
                         raise IniError('No key found in section "%s" on line %s\n\t(please correct in file "%s")'% (
                             sectionName, lineNum, fileName))
 
-        
+
         for s in self:
             section = self[s]
             for k in section:
@@ -850,7 +849,7 @@ u'v'
         if self._changed:
             self.write(file=file)
             self._changed = 0
-            
+
     def write(self, file=None):
         if not file:
             file = self._file
@@ -860,7 +859,7 @@ u'v'
         if ext == 'Ini':
             self._writeIni(file)
         else:
-            raise IniError, 'invalid extension for writing to file: %s'% file
+            raise IniError('invalid extension for writing to file: %s'% file)
 
     def _writeIni(self, file):
         """writes to file of type ini"""
@@ -897,24 +896,24 @@ u'v'
                 if type(k) == six.binary_type:
                     k = utilsqh.convertToUnicode(k)
                 v = self[s][k]
-                if type(v) == types.IntType:
-                    L.append(u'%s = %s' % (k, v))
-                elif type(v) == types.FloatType:
-                    L.append(u'%s = %s' % (k, v))
-                elif type(v) == types.BooleanType:
-                    L.append(u'%s = %s' % (k, str(v)))
+                if type(v) == int:
+                    L.append('%s = %s' % (k, v))
+                elif type(v) == float:
+                    L.append('%s = %s' % (k, v))
+                elif type(v) == bool:
+                    L.append('%s = %s' % (k, str(v)))
                 elif not v:
                     # print 'k: %s(%s)'% (k, type(k))
-                    L.append(u'%s =' % k)
-                        
-                elif type(v) == types.ListType or type(v) == types.TupleType:
-                    valueList = map(quoteSpecialList, v)
-                    startString = u'%s = '% k
+                    L.append('%s =' % k)
+
+                elif type(v) == list or type(v) == tuple:
+                    valueList = list(map(quoteSpecialList, v))
+                    startString = '%s = '% k
                     length = len(startString)
                     listToWrite = []
                     for v in valueList:
                         if listToWrite and length + len(v) + 2 > self._maxLength:
-                            L.append(u'%s%s' % (startString, '; '.join(listToWrite)))
+                            L.append('%s%s' % (startString, '; '.join(listToWrite)))
                             listToWrite = [v]
                             startString = ' '*len(startString)
                             length = len(startString) + len(v)
@@ -923,17 +922,17 @@ u'v'
                             length += len(v) + 2
                     if length > 72:
                         hasTrailingNewline = 1
-                    L.append(u'%s%s' % (startString, '; '.join(listToWrite)))
+                    L.append('%s%s' % (startString, '; '.join(listToWrite)))
                     L.append('')
-                elif type(v) == types.DictType:
+                elif type(v) == dict:
                     inverse = {}
-                    for K, V in v.items():
+                    for K, V in list(v.items()):
                         if type(V) == six.binary_type:
                             V = utilsqh.convertToUnicode(V)
-                            vv = quoteSpecialDict(V)                            
+                            vv = quoteSpecialDict(V)
                         elif type(V) == six.text_type:
-                            vv = quoteSpecialDict(V)                            
-                        elif type(V) == types.ListType or type(V) == types.TupleType:
+                            vv = quoteSpecialDict(V)
+                        elif type(V) == list or type(V) == tuple:
                             vv = ', '.join(map(quoteSpecialDict, V))
                         elif V is None:
                             vv = None
@@ -941,20 +940,20 @@ u'v'
                             inverse[vv].append(K)
                         else:
                             inverse[vv] = [K]
-                    startString = u'%s = '% k
+                    startString = '%s = '% k
                     length = len(startString)
                     if not inverse:
-                        L.append(u'%s' % startString)
+                        L.append('%s' % startString)
                     else:
                         if None in inverse:
-                            L.append(u'%s%s' % (startString, ', '.join(inverse[None])))
+                            L.append('%s%s' % (startString, ', '.join(inverse[None])))
                             del inverse[None]
                             startString = ' '*len(startString)
                         if inverse:
-                            for K, V in inverse.items():
+                            for K, V in list(inverse.items()):
 ##                                print 'writing back value: |%s|, startString: |%s|, keys: |%s|'% \
 ##                                      (K, startString, V)
-                                L.append(u'%s%s: %s' % (startString, ', '.join(V), K))
+                                L.append('%s%s: %s' % (startString, ', '.join(V), K))
                                 startString = ' '*len(startString)
                     hasTrailingNewline = 1
                     L.append('')
@@ -962,25 +961,25 @@ u'v'
                     if type(v) == six.binary_type:
                         v = utilsqh.convertToUnicode(v)
                     if type(v) != six.text_type:
-                        v = unicode(v)
+                        v = str(v)
                     v = v.strip()
                     if v.find('\n') >= 0:
                         hasTrailingNewline = 1
                         V = v.split('\n')
                         if not hadTrailingNewline:
                             L.append('')    # 1 extra newline
-                        L.append(u'%s =' % k)
+                        L.append('%s =' % k)
                         spacing = ' '*4
                         for li in V:
                             if li:
-                                L.append(u'%s%s' % (spacing, li))
+                                L.append('%s%s' % (spacing, li))
                             else:
                                 L.append('')
                         L.append('')
                     elif len(k) + len(v) > 72:
                         if not hasTrailingNewline:
                             L.append('')
-                        L.append(u'%s = %s' % (k, v))
+                        L.append('%s = %s' % (k, v))
                         L.append('')
                         hasTrailingNewline = 1
                     else:
@@ -992,7 +991,7 @@ u'v'
 ##            old = open(self._file).read()
 ##        else:
 ##            old = ""
-        new = u'\n'.join(L)
+        new = '\n'.join(L)
 ##        if old == new:
 
 ##            pass
@@ -1013,9 +1012,9 @@ u'v'
             newfile.delete()
         for j in range(i,0, -1):
             pass
-            
 
-    def get(self, s=None, k=None, value=u"", stripping=stripSpecial):
+
+    def get(self, s=None, k=None, value="", stripping=stripSpecial):
         """get sections, keys or values, uin version 3 extended
         with s also being a list, examples of this far below.
 
@@ -1038,16 +1037,16 @@ u'v'
         u'v'
 
         spaces in section or key name are stripped and made single:
-        
+
         >>> ini.set(" s  t ", "a  k ", 'strange')
         >>> ini.get("s t", 'a k')
         u'strange'
         >>> ini.get("s  t ", 'a      k ')
         u'strange'
-        
-        >>> 
+
+        >>>
         """
-        if type(s) == types.ListType or type(s) == types.TupleType:
+        if type(s) == list or type(s) == tuple:
             if k:
                 if k == 'next check date':
                     pass
@@ -1113,7 +1112,7 @@ u'v'
                         return value
                 else:
                     # no key given, request a list of keys
-                    KeysList = self[s].keys()
+                    KeysList = list(self[s].keys())
                     return [kk for kk in KeysList]
             elif k:
                 # s doesn't exist, return default value
@@ -1125,7 +1124,7 @@ u'v'
                 return []
         else:
             # no section, request section list
-            Keys = self.keys()
+            Keys = list(self.keys())
             return [kk for kk in Keys]
 
     def set(self, s, k=None, v=None):
@@ -1177,7 +1176,7 @@ u'v'
         u'" a "'
         """
         # self._changed = 1
-        if type(s) == types.ListType or type(k) == types.TupleType:
+        if type(s) == list or type(k) == tuple:
             for S in s:
                 self.set(S, k, v)
             return
@@ -1189,9 +1188,9 @@ u'v'
         # now make new section if not existing before:
         s = s.strip()
         if reWhiteSpace.search(s):
-            s = reWhiteSpace.sub(u' ', s).strip()
+            s = reWhiteSpace.sub(' ', s).strip()
 
-        if not reValidSection.match(u'['+s+']'):
+        if not reValidSection.match('['+s+']'):
             raise IniError("Invalid section name to set to: %s"% s)
 
         if not self.hasSection(s):
@@ -1202,8 +1201,8 @@ u'v'
             if v != None:
                 raise IniError('setting empty section with nonempty value: %s'% v)
             return
-            
-        if type(k) in (types.ListType, types.TupleType):
+
+        if type(k) in (list, tuple):
             for K in k:
                 self.set(s, K, v)
             return
@@ -1212,19 +1211,19 @@ u'v'
             k = utilsqh.convertToUnicode(k)
         if type(k) != six.text_type:
             raise IniError('key must be list, tuple or string, not: %s'% k)
-            
+
         # finally set s, k, to v
         if k == 'next check date':
             pass
 
         k = k.strip()
         if reWhiteSpace.search(k):
-            k = reWhiteSpace.sub(u' ', k)
+            k = reWhiteSpace.sub(' ', k)
         if reQuotes.search(k):
             k = reQuotes.sub('', k)
         if not reValidKey.match(k):
             raise IniError('key contains invalid character(s): |%s|'% repr(k))
-        
+
         if type(v) == six.binary_type:
             v = utilsqh.convertToUnicode(v)
         # print "s: %s(%s), k: %s(%s), v: %s(%s)"% (s, type(s), k, type(k), v, type(v))
@@ -1236,7 +1235,7 @@ u'v'
         except KeyError:
             pass
         if v != prevV:
-            self._changed = 1    
+            self._changed = 1
             self[s][k] = v
 
     def delete(self, s=None, k=None):
@@ -1325,7 +1324,7 @@ u'v'
         if self._SKIgnorecase:
             s = s.lower()
             k = k.lower()
-            
+
         return hasKey(s, k) and self[s][k]
 
     def close(self):
@@ -1338,7 +1337,7 @@ u'v'
     def getExtension(self, file):
         """capitalize text part of extension,
         .ini -> Ini
-        .py -> Py 
+        .py -> Py
         empty string -> ''
         """
         if file:
@@ -1346,12 +1345,12 @@ u'v'
             extension = extension[1:].capitalize()
             return extension
         else:
-            return u''
-    
+            return ''
+
 ##    def __call__(self, file):
 ##        """calling this class constructs a new instance,
 ##        with file as parameter
-##        
+##
 ##        result: instance
 ##        """
 ##        return IniVars(file)
@@ -1362,7 +1361,7 @@ u'v'
     def getList(self, section, key, default=None):
         """get a value and convert into a list
         see example above and:
-        
+
         >>> import os
         >>> try: os.remove('getlist.ini')
         ... except: pass
@@ -1379,7 +1378,7 @@ u'v'
         >>> ini.set('s', 'three', 'value 1\\nvalue 2\\nvalue 3 and more')
         >>> ini.getList('s', 'three')
         [u'value 1', u'value 2', u'value 3 and more']
-        >>> 
+        >>>
         """
         if not self:
             return []
@@ -1388,13 +1387,13 @@ u'v'
         except (KeyError, TypeError):
             if default == None:
                 return []
-            elif type(default) == types.ListType:
+            elif type(default) == list:
                 return copy.copy(default)
             else:
                 raise IniError('invalid type for default of getList: |%s|%`default`')
         if not value:
             return []
-        if type(value) == types.ListType:
+        if type(value) == list:
             return copy.copy(value)
         else:
             L = list(getIniList(value))
@@ -1418,7 +1417,7 @@ u'v'
         >>> ini.set('s', 'empty')
         >>> ini.getDict('s', 'empty')
         {}
-        
+
         default if base empty
         >>> ini.getDict('s', 'empty', {'s': None})
         {u's': None}
@@ -1443,9 +1442,9 @@ u'v'
         {u'empty': None}
         >>> ini.getDict('s', 'dict')
         {u'a': u'b'}
-        
+
         setting and getting through direct string values:
-        
+
         >>> ini.set('s', 'one', 'value')
         >>> ini.getDict('s', 'one')
         {u'value': None}
@@ -1457,33 +1456,33 @@ u'v'
         {u'key3': [u'value1', u'value2'], u'key2': [u'value1', u'value2'], u'key1': u'value 1', u'keyempty': None}
 
         also the value of the value can be a list:
-        
+
         >>> ini.set('s', 'list', 'key: a, b, c')
         >>> ini.getDict('s', 'list')
         {u'key': [u'a', u'b', u'c']}
         >>> ini.close()
-        
+
         """
         try:
             value = self[section][key]
         except (TypeError, KeyError):
             if default == None:
                 return {}
-            elif type(default) == types.DictType:
+            elif type(default) == dict:
                 return copy.copy(default)
             else:
                 raise IniError('invalid type for default of getDict: |%s|%`default`')
         if not value:
             if default == None:
                 return {}
-            elif type(default) == types.DictType:
+            elif type(default) == dict:
                 return copy.copy(default)
             else:
-                raise IniError('invalid type for default of getDict: |%s|%`default`')            
-            
-        elif type(value) == types.DictType:
+                raise IniError('invalid type for default of getDict: |%s|%`default`')
+
+        elif type(value) == dict:
             return copy.deepcopy(value)
-        
+
         D = {}
         for listvalue in getIniList(value):
             for k, v in getIniDict(listvalue):
@@ -1491,9 +1490,9 @@ u'v'
                     raise IniError('duplicate key |%s| in getDict: %s'%
                                    (k, value))
                 D[k] = v
-            
+
         return D
-            
+
     def getInt(self, section, key, default=0):
         """get a value and convert into a int
 
@@ -1509,14 +1508,14 @@ u'v'
         0
         >>> ini.getInt('s', 'default', 11)
         11
-        
+
         """
         try:
             i = self[section][key]
         except (KeyError, TypeError):
             return default
 
-        if type(i) == types.IntType:
+        if type(i) == int:
             return i
         if type(i) == six.binary_type:
             i = utilsqh.convertToUnicode(i)
@@ -1530,14 +1529,14 @@ u'v'
             else:
                 return default
         raise IniError('invalid type for getInt (probably intermediate set without write: %s)(section: %s, key: %s'%
-                       (`i`, section, key))
+                       (repr(i), section, key))
 
     def getBool(self, section, key, default=False):
         """get a value and convert into boolean
 
 t, T, true, True, Waar, waar, w, W, 1 -->> True
 empty, o, f, F, False, false, Onwaar, o, none -->> False
-        
+
         """
         try:
             i = self[section][key]
@@ -1545,7 +1544,7 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
             return default
         if not i:
             return False
-        
+
         if i.lower()[0] in ['t', 'w', '1']:
             return True
         if i.lower()[0] in ['f', 'o', '0']:
@@ -1566,14 +1565,14 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
         3.0
         >>> ini.getFloat('s', 'unknown')
         0.0
-        
+
         """
         try:
             i = self[section][key]
         except KeyError:
             return default
-        if type(i) == types.FloatType:
-            return 
+        if type(i) == float:
+            return
         if type(i) == six.binary_type:
             i = utilsqh.convertToUnicode(i)
         if type(i) == six.text_type:
@@ -1595,9 +1594,9 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
                 return 0.0
         raise IniError('invalid type for getFloat (probably intermediate set without write: %s)(section: %s, key: %s'%
                        (repr(i), section, key))
-    
-        
-                
+
+
+
 
     def getSectionPostfixesWithPrefix(self, prefix):
         """get all postfixes of sections, sorted, with a given prefix.
@@ -1611,7 +1610,7 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
 
         So sections [p], [p f], [p ff] give as result (in _sectionPostfixesWP['p']):
         ['ff', 'f', '']
-                
+
 
         >>> ini = IniVars('simple.ini')
         >>> ini.set('pref', 'key', '1')
@@ -1627,11 +1626,11 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
         >>> ini.getSectionPostfixesWithPrefix('pr')
         []
 
-        
+
         Now go and search back, longest match first!
         >>> ini.getFromSectionsWithPrefix('pr', 'foo bar eggs', 'key')
         u''
- 
+
         >>> ini.getFromSectionsWithPrefix('pref', 'foo bar eggs', 'key')
         u'5'
         >>> ini.getFromSectionsWithPrefix('pref', 'egg foo bar', 'key')
@@ -1669,7 +1668,7 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
         []
         >>> ini.getSectionsWithPrefix('pref', ['foo','eggs', ''])
         [u'pref foo', u'pref eggs', u'pref']
-        
+
         These lists can be used with the next get call,
         so if the section is a list,
         the entries of a list are searched until
@@ -1685,7 +1684,7 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
         u''
         >>> ini.get(['pref'], 'k')
         u''
-        
+
         We can also extract a list of all possible keys,
         and also ordered in a dictionary, leaving out doubles.
         >>> L = ini.getSectionsWithPrefix('pref') # with all sections with prefix pref
@@ -1712,7 +1711,7 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
         ## have the number added.
         >>> ini.formatKeysOrderedFromSections(L, giveLength=10)
         u'[pref foo]\\nkey\\n\\n[pref f]\\nl\\n\\n[pref]\\nm\\n'
-                
+
         For debugging purposes the section that matches a key
         from a section list can be retrieved:
 
@@ -1734,11 +1733,11 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
         if prefix in self._sectionPostfixesWP:
             return self._sectionPostfixesWP[prefix]
 
-        # call with new prefix, construct new entry:        
+        # call with new prefix, construct new entry:
         l = []
         for s in self.get():
             if s.find(prefix) == 0:
-                L = map(string.strip, s.split(' ', 1))
+                L = list(map(string.strip, s.split(' ', 1)))
                 if L[0] == prefix: # proceed:
                     if len(L) == 2:
                         if ' '.join(L) != s:
@@ -1746,7 +1745,7 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
                                            'required bewtween prefix and postfix: %s'% s)
                         l.append(L[1]) # combined section key "prefix rest"
                     else:
-                        l.append(u'')   # section key identical prefix, adding ''
+                        l.append('')   # section key identical prefix, adding ''
         if l:
             l.sort(lensort)
 
@@ -1764,7 +1763,7 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
         if type(prefix) == six.binary_type:
             prefix = utilsqh.convertToUnicode(prefix)
         postfixes = self.getSectionPostfixesWithPrefix(prefix)
-        
+
         for postfix  in postfixes:
             if postfix and longerText.find(postfix) >= 0:
                 v = self.get(prefix + ' ' + postfix, key)
@@ -1774,7 +1773,7 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
                 v = self.get(prefix, key)
                 if v:
                     return v
-        return u''
+        return ''
 
 
     def getSectionsWithPrefix(self, prefix, longerText=None):
@@ -1782,7 +1781,7 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
         the value is returned. longerText will often be a window title.
         If longerText is not given, a list of all sections with this prefix is returned.
 
-        examples and testing see above        
+        examples and testing see above
 
         """
         if type(prefix) == six.binary_type:
@@ -1799,19 +1798,19 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
             #     print '---postfix: %s (%s)'% (postfix, type(postfix))
             L = [prefix + ' ' + postfix for postfix in postfixes
                                     if longerText.find(postfix) >= 0]
-        elif type(longerText) in (types.ListType, types.TupleType):
+        elif type(longerText) in (list, tuple):
             L = [prefix + ' ' + postfix for postfix in longerText if postfix in postfixes ]
         else:
             return [prefix]
         return [l.strip() for l in L]
 
     def getKeysOrderedFromSections(self, sectionList):
-        """get all possible keys from a list of sections 
+        """get all possible keys from a list of sections
 
         A dictionary is returned, with keys being the section keys,
         and as values a list of keys that are taken from this section.
 
-        examples and testing see above        
+        examples and testing see above
 
         """
         allKeys = []
@@ -1838,22 +1837,22 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
             try:
                 v = int(v)
             except (ValueError, TypeError):
-                return 
+                return
             # now we now v is an integer number
             D.setdefault(v, []).append(k)
         # when here, a numbers dict is found
-        items = [(k,v) for k,v in D.items()]
+        items = [(k,v) for k,v in list(D.items())]
         return formatReverseNumbersDict(dict(items))
-        
-            
+
+
 
     def formatKeysOrderedFromSections(self, sectionList, lineLen=60, sort=1, giveLength=None):
-        """formats in a long string all possible keys from a list of sections 
+        """formats in a long string all possible keys from a list of sections
 
         The dictionary of the function "getKeysOrderedFromSections" is used,
         and the formatting is done with a generator function.
 
-        examples and testing see above        
+        examples and testing see above
 
         """
         D = self.getKeysOrderedFromSections(sectionList)
@@ -1861,7 +1860,7 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
         for k in sectionList:
             if giveLength:
                 lenValues = len(D[k])
-                if type(giveLength) == types.IntType and lenValues < giveLength:
+                if type(giveLength) == int and lenValues < giveLength:
                         L.append('[%s]'%k)
                 else:
                     L.append('[%s] (%s)'% (k, len(D[k])))
@@ -1870,7 +1869,7 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
             L.append(utilsqh.formatListColumns(D[k], lineLen=lineLen, sort=sort))
             L.append('')
         return '\n'.join(L)
-    
+
 
     def getMatchingSection(self, sectionList, key):
         """gives the section that has the key
@@ -1882,16 +1881,16 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
                     return utilsqh.convertToUnicode(s)
                 else:
                     return s
-        return u'section not found'
+        return 'section not found'
 
     def getKeysWithPrefix(self, section, prefix, glue=None, includePrefix=None):
         """get keys within a section with a fixed prefix
-        
+
         glue can be "-"
         if possible, the list is sorted numeric, if mixed, the numbers (until 99999) go first
         if includePrefix, prefix itself is inserted at start of resulting list
         (see unittest, testKeysWithPrefix)
-        
+
         >>> ini = IniVars('simple.ini')
         >>> ini.set('example', 'key', '1')
         >>> ini.set('example', 'key-4', '2')
@@ -1918,7 +1917,7 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
         []
 
 
-        
+
         """
         if not prefix:
             return []
@@ -1932,7 +1931,7 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
             rawlist.remove(prefix)
         else:
             gotPrefix = 0
-            
+
         if not rawlist:
             if includePrefix and gotPrefix:
                 return [prefix]
@@ -1943,7 +1942,7 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
         for k in rawlist:
             if glue:
                 try:
-                    start, num = map(string.strip, k.rsplit(glue, 1))
+                    start, num = list(map(string.strip, k.rsplit(glue, 1)))
                 except ValueError:
                     continue
             else:
@@ -1952,7 +1951,7 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
                 num = int(num)
             except ValueError:
                 num = 99999
-            if start == prefix:    
+            if start == prefix:
                 dec.append( (num, start, k) )
         if not dec:
             return []
@@ -1961,7 +1960,7 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
         if includePrefix and gotPrefix:
             resultList.insert(0, prefix)
         return resultList
-        
+
     def toDict(self, section=None):
         """for testing, return contents as a pure dict"""
         if section:
@@ -1971,20 +1970,20 @@ empty, o, f, F, False, false, Onwaar, o, none -->> False
                 return
         # whole inifile:
         D = dict()
-        for (k,v) in self.iteritems():
+        for (k,v) in self.items():
             D[k] = dict(v)
-        return D            
+        return D
 
     def fromDict(self, Dict, section=None):
         """enter ini data from a dict"""
         if section:
-            for k, v in Dict.iteritems():
+            for k, v in Dict.items():
                 self.set(section, k, v)
             return
         # complete file, double dict
-        for section, kv in Dict.iteritems():
-            if kv and type(kv) == types.DictType:
-                for k, v in kv.iteritems():
+        for section, kv in Dict.items():
+            if kv and type(kv) == dict:
+                for k, v in kv.items():
                     self.set(section, k, v)
             else:
                 raise TypeError('inivars, fromDict, invalid value for section "%s", should be a dict: %s'%
@@ -2018,7 +2017,7 @@ def sortHyphenKeys(keys):
 
 
     """
-        
+
     D  = {}
     for k in keys:
         parts = k.split('-')
@@ -2028,7 +2027,7 @@ def sortHyphenKeys(keys):
             D.setdefault(0, []).append(k)
         else:
             D.setdefault(index, []).append(k)
-    mainKeys = D.keys()
+    mainKeys = list(D.keys())
     mainKeys.sort()
     sortedKeys = []
     for mainKey in mainKeys:
@@ -2039,7 +2038,7 @@ def reverseDictWithDuplicates(D):
     """for testing, values are lists always
     """
     reverseD = {}
-    for k,v  in D.items():
+    for k,v  in list(D.items()):
         reverseD.setdefault(v, []).append(k)
     return reverseD
 
@@ -2048,17 +2047,17 @@ def formatReverseNumbersDict(D):
 
     keys: the spoken words possibly with equivalents
     value: a list of numbers, to be ordered rising order
-    
+
     (reverse with reverseDictWithDuplicates)
-    
+
     one ... twenty or one, two, twice, three ... ten
     """
     #reverseD = {}
     #for k,v in D.items():
     #    reverseD.setdefault(v, []).append(k)
-        
-    
-    items = [(k,v) for k,v in D.items()]
+
+
+    items = [(k,v) for k,v in list(D.items())]
     items.sort()
     # print 'items: %s'% items
     it = peek_ahead(items)
@@ -2092,7 +2091,7 @@ def formatReverseNumbersDict(D):
                 # one item of longer possibly ... separated sequence
                 if L: L.append(', ')
                 try:
-                    L.append(u'%s'% v[0])
+                    L.append('%s'% v[0])
                 except UnicodeDecodeError:
                     # print('inivars, formatReverseNumbersDict fails: %s (type: %s)'% (ord(v[0][0]), type(v[0])))
                     vv = utilsqh.convertToUnicode(v[0])
@@ -2100,7 +2099,7 @@ def formatReverseNumbersDict(D):
                 kPrev = k
     # for line in L:
     #     print 'line: %s (%s_)'% (line, type(line))
-    return u''.join(L)
+    return ''.join(L)
 
     ###???
     #minNum, maxNum = min(nums), max(nums)
@@ -2115,7 +2114,7 @@ def formatReverseNumbersDict(D):
     #        L.append(', '.join(v))
     #    if hadPrev:
     #        i
-    #        
+    #
     #if nums == range(minNum, maxNum+1):
     #    return (D[minNum], D[maxNum])
 
@@ -2147,7 +2146,7 @@ def sortLanguageKeys(keys):
 def listToString(valueList):
     """convert list of items (from _readIni) into a string
 
-    utility for readIni function.    
+    utility for readIni function.
 
     first strip off empty lines at beginning or end
     second if 1 line: return stripped state
@@ -2171,7 +2170,7 @@ u'stripped'
         valueList.pop()
     if len(valueList) == 1:
         return valueList[0].strip()
-    return u'\n'.join([v.rstrip() for v in valueList])
+    return '\n'.join([v.rstrip() for v in valueList])
 
 # patterns for runPythonCode:
 
@@ -2217,7 +2216,7 @@ def readExplicit(ini,mode=None ):
             else:
                 raise InivarsError('invalid mode for test function readExplicit: %s'% mode)
             ini.set(s, k, v)
-        
+
 retest = '''
 
 >>> testReMatch(reValidSection,  ['[valid section]', '[a3]', '[x]','[3x]', '[x - y]', '[X. Y.]'])
