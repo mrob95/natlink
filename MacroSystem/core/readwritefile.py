@@ -56,12 +56,11 @@ def readAnything(source, filetype=None, tryAlternatives=True):
     as the first three nearly always do the job
     (tried in test scripts/testreadanything.py)
     """    
-    sourceslash = str(source).replace('\\', '/')
+    sourceslash = source.replace('\\', '/')
     filename = os.path.split(sourceslash)[-1]
     
     if os.path.isfile(sourceslash):
-        with open(sourceslash, mode='rb') as file: # b is important -> binary
-            tRaw = file.read()
+        tRaw = io.open(sourceslash, 'rb').read()
         tRaw = fixCrLf(tRaw)
 
         if filetype:
@@ -130,16 +129,14 @@ def writeAnything(filepath, encoding, bom, content):
         tRaw = content.encode(encoding=encoding, errors='xmlcharrefreplace')
         
     if sys.platform == 'win32':
-        tRaw = tRaw.replace(b'\n', b'\r\n')
-        tRaw = tRaw.replace(b'\r\r\n', b'\r\n')
+        tRaw = tRaw.replace('\n', '\r\n')
+        tRaw = tRaw.replace('\r\r\n', '\r\n')
         
     if bom:
         print('add bom for tRaw')
         tRaw = bom + tRaw 
-    outfile = open(filepath, 'wb')
-    # what difference does a bytearray make? (QH)
-    outfile.write(bytearray(tRaw))
-    outfile.close()
+    nBytes = io.open(filepath, 'wb').write(tRaw)
+    pass
 
 def DecodeEncode(tRaw, filetype):
     """return the decoded string or False
